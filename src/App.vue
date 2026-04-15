@@ -460,6 +460,7 @@ export default {
     };
 
     const STORAGE_KEY = 'taphoa_products_v2';
+    const BACKUP_STORAGE_KEY = 'taphoa_products_backup_v1';
     const DATA_VERSION = '3'; // tăng số này mỗi khi cập nhật data.js
     const VERSION_KEY = 'taphoa_data_version';
     const ADMIN_KEY = getAdminKey();
@@ -533,6 +534,30 @@ export default {
     const saveProducts = (updated) => {
       products.value = updated;
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    };
+
+    const loadBackupProducts = () => {
+      const raw = localStorage.getItem(BACKUP_STORAGE_KEY);
+      if (!raw) {
+        return [];
+      }
+
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (error) {
+        return [];
+      }
+    };
+
+    const saveToBackupStore = (product) => {
+      const backupProducts = loadBackupProducts();
+      const existed = backupProducts.some((item) => item.id === product.id);
+      if (existed) {
+        return;
+      }
+
+      localStorage.setItem(BACKUP_STORAGE_KEY, JSON.stringify([product, ...backupProducts]));
     };
 
     const handleFileChange = (event) => {
@@ -819,6 +844,7 @@ export default {
 
       const productName = newProduct.name;
       saveProducts([newProduct, ...products.value]);
+      saveToBackupStore(newProduct);
       form.value = {
         name: '',
         price: '',
